@@ -10,6 +10,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'pwcb-secret-key-change-in-production';
 
+// Warn about using default JWT secret
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: Using default JWT_SECRET. Set JWT_SECRET environment variable in production!');
+}
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -310,7 +315,6 @@ app.get('*', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`PWcb server running on port ${PORT}`);
-  console.log(`Default admin credentials: username=admin, password=admin123`);
 });
 
 // Graceful shutdown

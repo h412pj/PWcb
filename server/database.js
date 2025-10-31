@@ -230,27 +230,29 @@ class Database {
   // Transfer operations
   createTransfer(fromUserId, toUserId, itemId, quantity) {
     return new Promise((resolve, reject) => {
-      this.db.serialize(() => {
-        this.db.run('BEGIN TRANSACTION');
+      const db = this.db;
+      
+      db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
 
         // Check if sender has enough items
-        this.db.get(
+        db.get(
           'SELECT quantity FROM inventory WHERE user_id = ? AND item_id = ?',
           [fromUserId, itemId],
           (err, row) => {
             if (err || !row || row.quantity < quantity) {
-              this.db.run('ROLLBACK');
+              db.run('ROLLBACK');
               reject(new Error('Insufficient items'));
               return;
             }
 
             // Reduce from sender
-            this.db.run(
+            db.run(
               'UPDATE inventory SET quantity = quantity - ? WHERE user_id = ? AND item_id = ?',
               [quantity, fromUserId, itemId],
               (err) => {
                 if (err) {
-                  this.db.run('ROLLBACK');
+                  db.run('ROLLBACK');
                   reject(err);
                   return;
                 }
@@ -259,22 +261,22 @@ class Database {
                 this.addToInventory(toUserId, itemId, quantity)
                   .then(() => {
                     // Record transfer
-                    this.db.run(
+                    db.run(
                       'INSERT INTO transfers (from_user_id, to_user_id, item_id, quantity) VALUES (?, ?, ?, ?)',
                       [fromUserId, toUserId, itemId, quantity],
                       function(err) {
                         if (err) {
-                          this.db.run('ROLLBACK');
+                          db.run('ROLLBACK');
                           reject(err);
                         } else {
-                          this.db.run('COMMIT');
+                          db.run('COMMIT');
                           resolve({ id: this.lastID });
                         }
                       }
                     );
                   })
                   .catch(err => {
-                    this.db.run('ROLLBACK');
+                    db.run('ROLLBACK');
                     reject(err);
                   });
               }
