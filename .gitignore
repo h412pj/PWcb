@@ -1,0 +1,5 @@
+node_modules/
+pwcb.db
+*.log
+.DS_Store
+.env

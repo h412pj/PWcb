@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWcb - Управление инвентарем Perfect World</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen">
+            <div class="login-container">
+                <h1>PWcb</h1>
+                <p class="subtitle">Управление инвентарем Perfect World</p>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="showLoginForm()">Вход</button>
+                    <button class="tab-btn" onclick="showRegisterForm()">Регистрация</button>
+                </div>
+
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginUsername">Имя пользователя</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Пароль</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                    <div id="loginError" class="error-message"></div>
+                </form>
+
+                <form id="registerForm" class="auth-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="registerUsername">Имя пользователя</label>
+                        <input type="text" id="registerUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Пароль</label>
+                        <input type="password" id="registerPassword" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+                    <div id="registerError" class="error-message"></div>
+                </form>
+
+                <div class="info-box">
+                    <p><strong>Демо-доступ администратора:</strong></p>
+                    <p>Логин: admin | Пароль: admin123</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="mainScreen" class="screen" style="display: none;">
+            <header>
+                <div class="container">
+                    <h1>PWcb</h1>
+                    <div class="user-info">
+                        <span id="currentUser"></span>
+                        <button onclick="logout()" class="btn btn-secondary">Выход</button>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="main-nav">
+                <div class="container">
+                    <button class="nav-btn active" onclick="showSection('inventory')">Мой инвентарь</button>
+                    <button class="nav-btn" onclick="showSection('transfers')">История переводов</button>
+                    <button class="nav-btn admin-only" onclick="showSection('items')" style="display: none;">Управление предметами</button>
+                    <button class="nav-btn admin-only" onclick="showSection('users')" style="display: none;">Пользователи</button>
+                    <button class="nav-btn admin-only" onclick="showSection('admin')" style="display: none;">Панель администратора</button>
+                </div>
+            </nav>
+
+            <main class="container">
+                <!-- Inventory Section -->
+                <section id="inventorySection" class="content-section">
+                    <h2>Мой инвентарь</h2>
+                    <div id="inventoryList" class="card-grid"></div>
+                    <div id="inventoryEmpty" class="empty-state">
+                        <p>Ваш инвентарь пуст</p>
+                    </div>
+                </section>
+
+                <!-- Transfers Section -->
+                <section id="transfersSection" class="content-section" style="display: none;">
+                    <h2>История переводов</h2>
+                    <div id="transfersList" class="table-container"></div>
+                    <div id="transfersEmpty" class="empty-state">
+                        <p>История переводов пуста</p>
+                    </div>
+                </section>
+
+                <!-- Items Management Section (Admin) -->
+                <section id="itemsSection" class="content-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>Управление предметами</h2>
+                        <button onclick="showItemModal()" class="btn btn-primary">Создать предмет</button>
+                    </div>
+                    <div id="itemsList" class="table-container"></div>
+                </section>
+
+                <!-- Users Section (Admin) -->
+                <section id="usersSection" class="content-section" style="display: none;">
+                    <h2>Пользователи</h2>
+                    <div id="usersList" class="table-container"></div>
+                </section>
+
+                <!-- Admin Dashboard Section -->
+                <section id="adminSection" class="content-section" style="display: none;">
+                    <h2>Панель администратора</h2>
+                    <div class="stats-grid" id="statsGrid"></div>
+                    
+                    <div class="admin-actions">
+                        <h3>Действия администратора</h3>
+                        <button onclick="showGiveItemModal()" class="btn btn-primary">Выдать предмет игроку</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeItemModal()">&times;</span>
+            <h2 id="itemModalTitle">Создать предмет</h2>
+            <form id="itemForm">
+                <input type="hidden" id="itemId">
+                <div class="form-group">
+                    <label for="itemName">Название</label>
+                    <input type="text" id="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemDescription">Описание</label>
+                    <textarea id="itemDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="itemType">Тип предмета</label>
+                    <select id="itemType" required>
+                        <option value="weapon">Оружие</option>
+                        <option value="armor">Броня</option>
+                        <option value="accessory">Аксессуар</option>
+                        <option value="consumable">Расходный материал</option>
+                        <option value="material">Материал</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemRarity">Редкость</label>
+                    <select id="itemRarity">
+                        <option value="common">Обычный</option>
+                        <option value="uncommon">Необычный</option>
+                        <option value="rare">Редкий</option>
+                        <option value="epic">Эпический</option>
+                        <option value="legendary">Легендарный</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemStats">Характеристики (JSON)</label>
+                    <textarea id="itemStats" rows="3" placeholder='{"attack": 100, "defense": 50}'></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" onclick="closeItemModal()" class="btn btn-secondary">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Give Item Modal -->
+    <div id="giveItemModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeGiveItemModal()">&times;</span>
+            <h2>Выдать предмет игроку</h2>
+            <form id="giveItemForm">
+                <div class="form-group">
+                    <label for="giveUserId">Пользователь</label>
+                    <select id="giveUserId" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="giveItemId">Предмет</label>
+                    <select id="giveItemId" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="giveQuantity">Количество</label>
+                    <input type="number" id="giveQuantity" min="1" value="1" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Выдать</button>
+                    <button type="button" onclick="closeGiveItemModal()" class="btn btn-secondary">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div id="transferModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTransferModal()">&times;</span>
+            <h2>Передать предмет</h2>
+            <form id="transferForm">
+                <input type="hidden" id="transferItemId">
+                <div class="form-group">
+                    <label for="transferItemName">Предмет</label>
+                    <input type="text" id="transferItemName" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="transferToUsername">Получатель (имя пользователя)</label>
+                    <input type="text" id="transferToUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="transferQuantity">Количество</label>
+                    <input type="number" id="transferQuantity" min="1" value="1" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Передать</button>
+                    <button type="button" onclick="closeTransferModal()" class="btn btn-secondary">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
