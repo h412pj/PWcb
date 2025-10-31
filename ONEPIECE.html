@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инвентарь клана</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+    <link rel="stylesheet" href="https://bot.my-style.md/PW/styles.css?v=20251031-001">
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <header class="header">
+            <h1>~OnePiece~ Банк</h1>
+        </header>
+
+        <!-- Фильтры -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="type-filter">Тип:</label>
+                <select id="type-filter">
+                    <option value="">Фильтр по типу</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="level-filter">Уровень:</label>
+                <select id="level-filter">
+                    <option value="">Фильтр по уровню</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="search-filter">Поиск:</label>
+                <input type="text" id="search-filter" placeholder="Поиск по названию...">
+            </div>
+            <button id="add-item-btn" class="btn btn-success hidden">Добавить предмет</button>
+            
+            <!-- Панель пользователя -->
+            <div class="user-panel">
+                <span id="user-info" class="user-info hidden">Добро пожаловать, <span id="username"></span></span>
+                <button id="login-btn" class="btn btn-primary">Войти</button>
+                <button id="logout-btn" class="btn btn-secondary hidden">Выйти</button>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="main-content">
+            <!-- Сетка предметов -->
+            <div class="inventory-section">
+                <div id="items-grid" class="items-grid">
+                    <!-- Предметы будут загружены через JavaScript -->
+                </div>
+                
+                <!-- Пагинация -->
+                <div class="pagination" id="pagination">
+                    <button id="prev-page" class="btn btn-secondary">‹ Назад</button>
+                    <div class="page-info">
+                        <span id="page-info">Страница <span id="current-page">1</span> из <span id="total-pages">1</span></span>
+                        <span id="items-info">(<span id="items-start">1</span>-<span id="items-end">81</span> из <span id="total-items">81</span>)</span>
+                    </div>
+                    <button id="refresh-btn" class="btn btn-primary" style="padding: 8px 12px;">ОБНОВИТЬ</button>
+                    <button id="next-page" class="btn btn-secondary">Вперед ›</button>
+                </div>
+            </div>
+
+            <!-- Лог передач -->
+            <div class="log-section">
+                <div id="transfer-log" class="transfer-log">
+                    <!-- Логи будут загружены через JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Авторизация</h3>
+                <span class="close" id="close-login">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-username">Логин:</label>
+                        <input type="text" id="login-username" name="username" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Пароль:</label>
+                        <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно передачи предмета -->
+    <div id="transfer-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- Вкладки перемещены в заголовок -->
+                <div class="modal-tabs">
+                    <button type="button" class="tab-button active" data-tab="transfer">Передать</button>
+                    <button type="button" class="tab-button" data-tab="edit">Редактировать</button>
+                </div>
+                <span class="close" id="close-transfer">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="transfer-form">
+                    <input type="hidden" id="transfer-item-id" name="item_id">
+                    <input type="hidden" id="transfer-inventory-id" name="inventory_id">
+                    
+                    <div class="item-info">
+                        <div id="transfer-item-icon" class="item-icon-large"></div>
+                        <div class="item-details">
+                            <h4 id="transfer-item-name"></h4>
+                            <p id="transfer-item-type"></p>
+                            <p id="transfer-item-id-display">ID: <span id="transfer-item-id-value">0</span></p>
+                            <p id="transfer-item-available">Доступно: <span id="available-quantity">0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Содержимое вкладки "Передать" -->
+                    <div id="tab-transfer" class="tab-content active">
+
+                    <div class="form-group" id="category-edit-group" style="display: none;">
+                        <label for="item-category-select">Категория предмета:</label>
+                        <select id="item-category-select">
+                            <option value="">Выберите категорию</option>
+                        </select>
+                        <button type="button" id="save-category-btn" class="btn-secondary" style="margin-top: 10px;">Сохранить категорию</button>
+                    </div>
+
+                    <!-- Количество и Кому в одной строке -->
+                    <div class="form-row">
+                        <div class="form-group half-width">
+                            <label for="transfer-quantity">Количество:</label>
+                            <input type="number" id="transfer-quantity" name="quantity" min="1" max="1" value="1" required>
+                        </div>
+                        <div class="form-group half-width" id="authorized-transfer-to">
+                            <label for="transfer-to">Кому:</label>
+                            <input type="text" id="transfer-to" name="to_user" placeholder="Имя игрока">
+                        </div>
+                    </div>
+                    <div class="form-group half-width" id="unauthorized-transfer-to" style="display: none;">
+                        <label for="transfer-to-select">Кому:</label>
+                        <select id="transfer-to-select" name="to_user_select">
+                            <option value="">Выберите мастера клана</option>
+                            <option value="MоnkeyDLuffy">MоnkeyDLuffy</option>
+                            <option value="TonyChopper">TonyChopper</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="requester-nick-group" style="display: none;">
+                        <label for="requester-nick">Ваш ник:</label>
+                        <input type="text" id="requester-nick" name="requester_nick" placeholder="Введите ваш ник" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="transfer-note">Примечание:</label>
+                        <textarea id="transfer-note" name="note" placeholder="Комментарий к передаче"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submit-transfer">Передать</button>
+                        <button type="button" class="btn btn-danger" id="delete-item-btn" style="display: none;">Удалить</button>
+                    </div>
+                    
+                    </div> <!-- Конец вкладки "Передать" -->
+
+                    <!-- Содержимое вкладки "Редактировать" -->
+                    <div id="tab-edit" class="tab-content">
+                        <!-- Расширенные свойства предмета -->
+                        <div class="form-group" id="item-properties-group" style="display: none;">
+                            <h4 style="color: #ffcc00; margin-bottom: 15px;">Свойства предмета</h4>
+                            
+                            <div class="property-row">
+                                <label for="refine-level">Уровень заточки:</label>
+                                <input type="number" id="refine-level" min="0" max="12" value="0" title="Максимальный уровень заточки: 12">
+                            </div>
+                            
+                            <div class="property-row">
+                                <label for="engrave-select">Гравировка:</label>
+                                <select id="engrave-select">
+                                    <option value="">Без гравировки</option>
+                                </select>
+                            </div>
+                            
+                            <div class="property-row">
+                                <label for="socket-count">Количество слотов:</label>
+                                <input type="number" id="socket-count" min="0" max="4" value="0" title="Оружие: макс. 2 слота, Броня: макс. 4 слота">
+                            </div>
+                            
+                            <div id="stones-container">
+                                <h5 style="color: #ffcc00; margin: 15px 0 10px 0;">Камни:</h5>
+                                <div class="stones-grid">
+                                    <div class="stone-slot">
+                                        <label>Слот 1:</label>
+                                        <select id="stone-1">
+                                            <option value="">Пустой</option>
+                                        </select>
+                                    </div>
+                                    <div class="stone-slot">
+                                        <label>Слот 2:</label>
+                                        <select id="stone-2">
+                                            <option value="">Пустой</option>
+                                        </select>
+                                    </div>
+                                    <div class="stone-slot">
+                                        <label>Слот 3:</label>
+                                        <select id="stone-3">
+                                            <option value="">Пустой</option>
+                                        </select>
+                                    </div>
+                                    <div class="stone-slot">
+                                        <label>Слот 4:</label>
+                                        <select id="stone-4">
+                                            <option value="">Пустой</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Изменение количества предметов -->
+                        <div class="form-group" id="quantity-edit-group">
+                            <h4 style="color: #ffcc00; margin-bottom: 15px;">Количество</h4>
+                            <div class="property-row">
+                                <label for="item-quantity-edit">Количество предметов:</label>
+                                <input type="number" id="item-quantity-edit" min="1" max="999" value="1" title="Изменить количество предметов в стеке">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-primary" id="save-properties-btn">Сохранить</button>
+                            <button type="button" class="btn btn-danger" id="delete-item-btn-tab" style="margin-left: auto;">Удалить</button>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления предмета -->
+    <div id="add-item-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить предмет в инвентарь</h3>
+                <span class="close" id="close-add-item">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="add-item-form">
+                    <div class="form-group search-container">
+                        <label for="add-item-search">Поиск предмета:</label>
+                        <input type="text" id="add-item-search" placeholder="Введите ID или название предмета">
+                        <div id="item-suggestions" class="suggestions hidden"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-item-quantity">Количество:</label>
+                        <input type="number" id="add-item-quantity" name="quantity" min="1" value="1" required>
+                    </div>
+                    <input type="hidden" id="add-item-id" name="item_id">
+                    <button type="submit" class="btn btn-success">Добавить в инвентарь</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для уведомлений -->
+        <!-- Уведомления -->
+    <div id="notifications-container" class="notifications-container"></div>
+
+    <!-- Игровой tooltip -->
+    <div id="game-tooltip" class="game-tooltip"></div>
+
+    <script src="https://bot.my-style.md/PW/script.js?v=20251031-004"></script>
+</body>
+</html>
